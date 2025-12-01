@@ -1,46 +1,89 @@
-# Python Django
-# Test a Django project on multiple versions of Python.
-# Add steps that analyze code, save build artifacts, deploy, and more:
+# Python to Linux Web App on Azure
+# Build your Python project and deploy it to Azure as a Linux Web App.
+# Change python version to one thats appropriate for your application.
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 trigger:
 - main
 
-pool:
-  name: 'ISW2-SanJoseDaniel'
-strategy:
-  matrix:
-    Python312:
-      PYTHON_VERSION: '3.12'
-  maxParallel: 3
+variables:
+  # Azure Resource Manager connection created during pipeline creation
+  azureServiceConnectionId: 'abaa671b-36dd-4136-b05d-ecfb61eaf3c1'
 
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '$(PYTHON_VERSION)'
-    architecture: 'x64'
 
-- script: |
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-  displayName: 'Install prerequisites'
+  # Web app name
+  webAppName: 'Relecloud'
 
-- script: |
-    python manage.py test
-  displayName: 'Run tests'
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
 
-- task: PublishTestResults@2
-  inputs:
-    testResultsFiles: '**/TEST-*.xml'
-    testRunTitle: 'Python $(PYTHON_VERSION)'
-  condition: succeededOrFailed()
-- task: AzureRmWebAppDeployment@5
-  inputs:
-    ConnectionType: 'AzureRM'
-    azureSubscription: 'Azure for Students(10)(033e26f8-876d-4414-b6bc-673accd6b842)'
-    appType: 'webApp'
-    WebAppName: 'Relecloud'
-    deployToSlotOrASE: true
-    ResourceGroupName: 'Django'
-    SlotName: 'production'
-    packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+  # Environment name
+  environmentName: 'Relecloud'
+
+  # Project root folder. Point to the folder containing manage.py file.
+  projectRoot: $(System.DefaultWorkingDirectory)
+
+  #pythonVersion: '3.12'
+  pythonPath: '/usr/bin/python3'
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: BuildJob
+    pool:
+      name: 'ISW2-SanJoseDaniel'
+    steps:
+    # - task: UsePythonVersion@0
+    #   inputs:
+    #     versionSpec: '$(pythonVersion)'
+    #   displayName: 'Use Python $(pythonVersion)'
+
+    - script: |
+        $(pythonPath) -m venv antenv
+        source antenv/bin/activate
+        python -m pip install --upgrade pip
+        pip install setup
+        pip install -r requirements.txt
+      workingDirectory: $(projectRoot)
+      displayName: "Install requirements"
+
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(projectRoot)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+
+    - upload: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+      displayName: 'Upload package'
+      artifact: drop
+
+- stage: Deploy
+  displayName: 'Deploy Web App'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeploymentJob
+    pool: 
+      name: 'ISW2-SanJoseDaniel'
+    environment: $(environmentName)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          # - task: UsePythonVersion@0
+          #   inputs:
+          #     versionSpec: '$(pythonVersion)'
+          #   displayName: 'Use Python version'
+
+          - task: AzureWebApp@1
+            displayName: 'Deploy Azure Web App : Relecloud'
+            inputs:
+              appType: webApp
+              azureSubscription: 
+              appName: $(webAppName)
+              package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
