@@ -10,12 +10,8 @@ pool:
   name: 'ISW2-SanJoseDaniel'
 strategy:
   matrix:
-    Python38:
-      PYTHON_VERSION: '3.8'
-    Python39:
-      PYTHON_VERSION: '3.9'
-    Python310:
-      PYTHON_VERSION: '3.10'
+    Python312:
+      PYTHON_VERSION: '3.12'
   maxParallel: 3
 
 steps:
@@ -38,3 +34,13 @@ steps:
     testResultsFiles: '**/TEST-*.xml'
     testRunTitle: 'Python $(PYTHON_VERSION)'
   condition: succeededOrFailed()
+- task: AzureRmWebAppDeployment@5
+  inputs:
+    ConnectionType: 'AzureRM'
+    azureSubscription: 'Azure for Students(10)(033e26f8-876d-4414-b6bc-673accd6b842)'
+    appType: 'webApp'
+    WebAppName: 'Relecloud'
+    deployToSlotOrASE: true
+    ResourceGroupName: 'Django'
+    SlotName: 'production'
+    packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
