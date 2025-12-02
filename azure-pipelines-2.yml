@@ -2,21 +2,18 @@ trigger:
 - main
 
 variables:
-  # Nombre EXACTO de la service connection (como sale en Service connections)
   azureServiceConnection: 'Azure for Students(033e26f8-876d-4414-b6bc-673accd6b842)'
-
-  # Nombre de la Web App en Azure
   webAppName: 'Relecloud-2526'
-
-  # Nombre del entorno en Azure DevOps
   environmentName: 'Relecloud-2526'
 
-  # Carpeta donde están manage.py y requirements.txt
+  # Carpeta donde están manage.py, relecloud/, project/, requirements.txt
   projectRoot: '$(Build.SourcesDirectory)\django\django'
 
 
-# =============== BUILD ===============
 stages:
+# =========================
+# BUILD
+# =========================
 - stage: Build
   displayName: 'Build stage'
   jobs:
@@ -29,6 +26,7 @@ stages:
         cd
         dir
       displayName: 'Check working dir'
+      
 
     - script: |
         echo Creando entorno virtual...
@@ -41,10 +39,11 @@ stages:
         python -m pip install --upgrade pip
         pip install --upgrade setuptools
 
-        echo Instalando dependencias...
+        echo Instalando dependencias desde requirements.txt...
         pip install -r requirements.txt
       workingDirectory: '$(projectRoot)'
       displayName: 'Install requirements'
+      
 
     - task: ArchiveFiles@2
       displayName: 'Archive files'
@@ -60,7 +59,9 @@ stages:
       artifact: drop
 
 
-# =============== DEPLOY ===============
+# =========================
+# DEPLOY
+# =========================
 - stage: Deploy
   displayName: 'Deploy Web App'
   dependsOn: Build
@@ -86,4 +87,4 @@ stages:
               appType: webAppLinux
               azureSubscription: '$(azureServiceConnection)'
               appName: '$(webAppName)'
-              package: '$(Pipeline.Workspace)/drop/AppFolder'
+              package: '$(Pipeline.Workspace)/drop/app.zip'
