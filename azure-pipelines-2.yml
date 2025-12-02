@@ -88,14 +88,23 @@ stages:
           #     versionSpec: '$(pythonVersion)'
           #   displayName: 'Use Python version'
 
-          - task: AzureWebApp@1
-            displayName: 'Deploy Azure Web App : Relecloud'
-            inputs:
-              resourceGroupName: django
-              slotName: production
-              appType: webApp
-              azureSubscription: $(azureServiceConnectionId)
-              appName: $(webAppName)
-              package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
+         # - task: AzureWebApp@1
+          #  displayName: 'Deploy Azure Web App : Relecloud'
+           # inputs:
+            #  resourceGroupName: django
+             # slotName: production
+              #appType: webApp
+              #azureSubscription: $(azureServiceConnectionId)
+              #appName: $(webAppName)
+              #package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
+
+              - task: AzureRmWebAppDeployment@5
+                inputs:
+                  ConnectionType: 'AzureRM'
+                  azureSubscription: 'Azure for Students(033e26f8-876d-4414-b6bc-673accd6b842)'
+                  appType: 'webAppLinux'
+                  WebAppName: 'Relecloud-2526'
+                  packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+                  DeploymentTypeLinux: 'oneDeploy'
 
 
