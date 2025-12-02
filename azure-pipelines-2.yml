@@ -17,7 +17,8 @@ variables:
   environmentName: 'Relecloud-2526'
 
   # Project root folder. Point to the folder containing manage.py file.
-  projectRoot: $(System.DefaultWorkingDirectory)
+  # Ruta correcta donde está manage.py y requirements.txt
+  projectRoot: '$(Build.SourcesDirectory)\django\django'
 
   #pythonVersion: '3.12'
   pythonPath: '/usr/bin/python3'
@@ -96,4 +97,3 @@ stages:
               package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
 
 
-              
