@@ -104,7 +104,7 @@ stages:
                   azureSubscription: 'Azure for Students(033e26f8-876d-4414-b6bc-673accd6b842)'
                   appType: 'webAppLinux'
                   WebAppName: 'Relecloud-2526'
-                  packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+                  packageForLinux: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
                   DeploymentTypeLinux: 'oneDeploy'
 
 
