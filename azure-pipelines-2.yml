@@ -27,7 +27,7 @@ stages:
   - job: BuildJob
     displayName: 'BuildJob'
     pool:
-      name: 'ISW2-SanJoseDaniel'   # agente self-hosted
+      name: 'IS2-Practica2'   # agente self-hosted
     steps:
     - script: |
         $(pythonPath) --version
@@ -63,7 +63,7 @@ stages:
   - deployment: DeploymentJob
     displayName: 'DeploymentJob'
     pool:
-      name: 'ISW2-SanJoseDaniel'   # mismo agente
+      name: 'IS2-Practica2'   # mismo agente
     environment: $(environmentName)
     strategy:
       runOnce:
