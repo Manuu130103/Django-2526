@@ -1,3 +1,6 @@
+# Pipeline Django + despliegue Azure Web App
+# Usando agente self-hosted Windows del pool IS2-Practica2
+
 trigger:
 - main
 
@@ -5,7 +8,9 @@ variables:
   azureServiceConnectionId: 'abaa671b-36dd-4136-b05d-ecfb61eaf3c1'
   webAppName: 'Relecloud-2526'
   environmentName: 'Relecloud-2526'
-  projectRoot: $(System.DefaultWorkingDirectory)
+
+  # Ruta correcta donde está manage.py y requirements.txt
+  projectRoot: '$(Build.SourcesDirectory)\django\django'
 
 stages:
 - stage: Build
@@ -14,22 +19,33 @@ stages:
   - job: BuildJob
     displayName: 'BuildJob'
     pool:
-      name: 'IS2-Practica2'   # ← pon aquí el pool donde está tu agente
+      name: 'IS2-Practica2'
+
     steps:
     - script: |
+        echo Mostrando Python...
         python --version
       displayName: 'Check Python version'
-      
 
     - script: |
+        echo Cambiando a la carpeta del proyecto:
+        cd
+        dir
+
+        echo Creando entorno virtual...
         python -m venv antenv
+
+        echo Activando entorno virtual...
         call antenv\Scripts\activate
+
+        echo Actualizando pip y setuptools...
         python -m pip install --upgrade pip
-        pip install setuptools
+        pip install --upgrade setuptools
+
+        echo Instalando dependencias...
         pip install -r requirements.txt
-      workingDirectory: $(projectRoot)
+      workingDirectory: '$(projectRoot)'
       displayName: 'Install requirements'
-      
 
     - task: ArchiveFiles@2
       displayName: 'Archive files'
@@ -41,19 +57,22 @@ stages:
         replaceExistingArchive: true
 
     - upload: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-      displayName: 'Upload package'
       artifact: drop
+      displayName: 'Upload package'
+
 
 - stage: Deploy
   displayName: 'Deploy Web App'
   dependsOn: Build
   condition: succeeded()
+
   jobs:
   - deployment: DeploymentJob
     displayName: 'DeploymentJob'
     pool:
-      name: 'IS2-Practica2'   # mismo pool/PC
+      name: 'IS2-Practica2'
     environment: $(environmentName)
+
     strategy:
       runOnce:
         deploy:
