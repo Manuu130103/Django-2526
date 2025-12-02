@@ -36,13 +36,24 @@ stages:
     #   displayName: 'Use Python $(pythonVersion)'
 
     - script: |
-        $(pythonPath) -m venv antenv
-        source antenv/bin/activate
+        echo Cambiando a la carpeta del proyecto:
+        cd
+        dir
+
+        echo Creando entorno virtual...
+        python -m venv antenv
+
+        echo Activando entorno virtual...
+        call antenv\Scripts\activate
+
+        echo Actualizando pip y setuptools...
         python -m pip install --upgrade pip
-        pip install setup
+        pip install --upgrade setuptools
+
+        echo Instalando dependencias...
         pip install -r requirements.txt
-      workingDirectory: $(projectRoot)
-      displayName: "Install requirements"
+      workingDirectory: '$(projectRoot)'
+      displayName: 'Install requirements'
 
     - task: ArchiveFiles@2
       displayName: 'Archive files'
@@ -83,3 +94,6 @@ stages:
               azureSubscription: $(azureServiceConnectionId)
               appName: $(webAppName)
               package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
+
+
+              
