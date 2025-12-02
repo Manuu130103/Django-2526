@@ -2,48 +2,51 @@ trigger:
 - main
 
 variables:
-  azureServiceConnection: 'Azure for Students(033e26f8-876d-4414-b6bc-673accd6b842)'
-  webAppName: 'Relecloud-2526'
+  # Service connection de esta organización (NOMBRE, tal como aparece en DevOps)
+  azureServiceConnectionId: 'Azure for Students(033e26f8-876d-4414-b6bc-673accd6b842)'
+
+  # Nombre de la Web App en Azure (puede ser el slot)
+  webAppName: 'Relecloud-2526-g8hubyh8c4f9hcgz'
+  # Si quieres la app base:
+  # webAppName: 'Relecloud-2526'
+
   environmentName: 'Relecloud-2526'
 
-  # Carpeta donde están manage.py, relecloud/, project/, requirements.txt
+  # Carpeta donde están manage.py, project/, relecloud/, requirements.txt
   projectRoot: '$(Build.SourcesDirectory)\django\django'
+
+  pythonExe: 'python'
 
 
 stages:
-# =========================
-# BUILD
-# =========================
+# ========== BUILD ==========
 - stage: Build
-  displayName: 'Build stage'
+  displayName: Build stage
   jobs:
   - job: BuildJob
     pool:
       name: 'IS2-Practica2'
     steps:
     - script: |
-        echo Carpeta actual:
+        echo Carpeta de trabajo:
         cd
         dir
       displayName: 'Check working dir'
-      
 
     - script: |
         echo Creando entorno virtual...
-        python -m venv antenv
+        %(pythonExe)s -m venv antenv
 
         echo Activando entorno virtual...
         call antenv\Scripts\activate
 
-        echo Actualizando pip y setuptools...
-        python -m pip install --upgrade pip
-        pip install --upgrade setuptools
+        echo Actualizando pip...
+        %(pythonExe)s -m pip install --upgrade pip
 
-        echo Instalando dependencias desde requirements.txt...
+        echo Instalando dependencias...
         pip install -r requirements.txt
-      workingDirectory: '$(projectRoot)'
-      displayName: 'Install requirements'
-      
+      workingDirectory: $(projectRoot)
+      displayName: "Install requirements"
 
     - task: ArchiveFiles@2
       displayName: 'Archive files'
@@ -51,24 +54,22 @@ stages:
         rootFolderOrFile: '$(projectRoot)'
         includeRootFolder: false
         archiveType: zip
-        archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
         replaceExistingArchive: true
 
-    - upload: '$(Build.ArtifactStagingDirectory)/app.zip'
+    - upload: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       displayName: 'Upload package'
       artifact: drop
 
 
-# =========================
-# DEPLOY
-# =========================
+# ========== DEPLOY ==========
 - stage: Deploy
   displayName: 'Deploy Web App'
   dependsOn: Build
   condition: succeeded()
   jobs:
   - deployment: DeploymentJob
-    pool: 
+    pool:
       name: 'IS2-Practica2'
     environment: $(environmentName)
     strategy:
@@ -82,9 +83,9 @@ stages:
               path: '$(Pipeline.Workspace)/drop'
 
           - task: AzureWebApp@1
-            displayName: 'Deploy Azure Web App : Relecloud-2526'
+            displayName: 'Deploy Azure Web App : $(webAppName)'
             inputs:
               appType: webAppLinux
-              azureSubscription: '$(azureServiceConnection)'
-              appName: '$(webAppName)'
-              package: '$(Pipeline.Workspace)/drop/app.zip'
+              azureSubscription: $(azureServiceConnectionId)
+              appName: $(webAppName)
+              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
