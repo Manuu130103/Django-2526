@@ -35,13 +35,13 @@ stages:
 
     - script: |
         echo Creando entorno virtual...
-        %(pythonExe)s -m venv antenv
+        python -m venv antenv
 
         echo Activando entorno virtual...
         call antenv\Scripts\activate
 
         echo Actualizando pip...
-        %(pythonExe)s -m pip install --upgrade pip
+        python -m pip install --upgrade pip
 
         echo Instalando dependencias...
         pip install -r requirements.txt
