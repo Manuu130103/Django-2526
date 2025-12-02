@@ -80,9 +80,10 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Deploy Azure Web App : Relecloud-2526'
             inputs:
-              azureSubscription: '$(azureServiceConnectionId)'
+              azureSubscription: 'Azure for Students(033e26f8-876d-4414-b6bc-673accd6b842)'
               appType: 'webAppLinux'
-              appName: '$(webAppName)'
+              appName: 'Relecloud-2526'
               deployToSlotOrASE: true
+              resourceGroupName: 'Django'
               slotName: 'production'
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
