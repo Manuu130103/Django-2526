@@ -91,6 +91,8 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Deploy Azure Web App : Relecloud'
             inputs:
+              resourceGroupName: django
+              slotName: production
               appType: webApp
               azureSubscription: $(azureServiceConnectionId)
               appName: $(webAppName)
