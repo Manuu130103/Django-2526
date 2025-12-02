@@ -80,7 +80,9 @@ stages:
           - task: AzureWebApp@1
             displayName: 'Deploy Azure Web App : Relecloud-2526'
             inputs:
-              appType: webApp
               azureSubscription: '$(azureServiceConnectionId)'
-              appName: $(webAppName)
+              appType: 'webAppLinux'
+              appName: '$(webAppName)'
+              deployToSlotOrASE: true
+              slotName: 'production'
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
