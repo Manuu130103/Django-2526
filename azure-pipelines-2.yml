@@ -74,11 +74,14 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: DownloadPipelineArtifact@2
-            displayName: 'Download build artifact'
+          - task: ArchiveFiles@2
+            displayName: 'Archive files'
             inputs:
-              artifact: drop
-              path: '$(Pipeline.Workspace)/drop'
+              rootFolderOrFile: '$(projectRoot)' # La carpeta que contiene los archivos
+              includeRootFolder: false          # NO incluye la carpeta raíz en el ZIP
+              archiveType: zip
+              archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+              replaceExistingArchive: true
 
           - task: AzureWebApp@1
             displayName: 'Deploy Azure Web App : Relecloud-2526'
