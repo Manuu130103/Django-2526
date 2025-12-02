@@ -1,24 +1,11 @@
-# Python to Linux Web App on Azure
-# Build your Python project and deploy it to Azure as a Linux Web App.
-
 trigger:
 - main
 
 variables:
-  # Azure Resource Manager connection
   azureServiceConnectionId: 'abaa671b-36dd-4136-b05d-ecfb61eaf3c1'
-
-  # Web app name
   webAppName: 'Relecloud-2526'
-
-  # Environment name
   environmentName: 'Relecloud-2526'
-
-  # Project root folder. Folder que contiene manage.py
   projectRoot: $(System.DefaultWorkingDirectory)
-
-  # Ruta a Python en el agente self-hosted
-  pythonPath: '/usr/bin/python3'
 
 stages:
 - stage: Build
@@ -27,20 +14,22 @@ stages:
   - job: BuildJob
     displayName: 'BuildJob'
     pool:
-      name: 'IS2-Practica2'   # agente self-hosted
+      name: 'IS2-Practica2'   # ← pon aquí el pool donde está tu agente
     steps:
     - script: |
-        $(pythonPath) --version
+        python --version
       displayName: 'Check Python version'
+      
 
     - script: |
-        $(pythonPath) -m venv antenv
-        source antenv/bin/activate
+        python -m venv antenv
+        call antenv\Scripts\activate
         python -m pip install --upgrade pip
         pip install setuptools
         pip install -r requirements.txt
       workingDirectory: $(projectRoot)
       displayName: 'Install requirements'
+      
 
     - task: ArchiveFiles@2
       displayName: 'Archive files'
@@ -63,7 +52,7 @@ stages:
   - deployment: DeploymentJob
     displayName: 'DeploymentJob'
     pool:
-      name: 'IS2-Practica2'   # mismo agente
+      name: 'IS2-Practica2'   # mismo pool/PC
     environment: $(environmentName)
     strategy:
       runOnce:
@@ -73,6 +62,6 @@ stages:
             displayName: 'Deploy Azure Web App : Relecloud-2526'
             inputs:
               appType: webApp
-              azureSubscription:
+              azureSubscription: 
               appName: $(webAppName)
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
