@@ -12,13 +12,13 @@ variables:
 
 
   # Web app name
-  webAppName: 'Relecloud'
+  webAppName: 'Relecloud-2526'
 
   # Agent VM image name
   vmImageName: 'ubuntu-latest'
 
   # Environment name
-  environmentName: 'Relecloud'
+  environmentName: 'Relecloud-2526'
 
   # Project root folder. Point to the folder containing manage.py file.
   projectRoot: $(System.DefaultWorkingDirectory)
