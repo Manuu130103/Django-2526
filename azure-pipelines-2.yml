@@ -1,7 +1,5 @@
 # Python to Linux Web App on Azure
 # Build your Python project and deploy it to Azure as a Linux Web App.
-# Change python version to one thats appropriate for your application.
-# https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 trigger:
 - main
@@ -9,7 +7,6 @@ trigger:
 variables:
   # Azure Resource Manager connection created during pipeline creation
   azureServiceConnectionId: 'abaa671b-36dd-4136-b05d-ecfb61eaf3c1'
-
 
   # Web app name
   webAppName: 'Relecloud-2526'
@@ -23,7 +20,7 @@ variables:
   # Project root folder. Point to the folder containing manage.py file.
   projectRoot: $(System.DefaultWorkingDirectory)
 
-  #pythonVersion: '3.12'
+  pythonVersion: '3.12'
   pythonPath: '/usr/bin/python3'
 
 stages:
@@ -34,19 +31,19 @@ stages:
     pool:
       name: 'ISW2-SanJoseDaniel'
     steps:
-    # - task: UsePythonVersion@0
-    #   inputs:
-    #     versionSpec: '$(pythonVersion)'
-    #   displayName: 'Use Python $(pythonVersion)'
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '$(pythonVersion)'
+      displayName: 'Use Python $(pythonVersion)'
 
     - script: |
         $(pythonPath) -m venv antenv
         source antenv/bin/activate
         python -m pip install --upgrade pip
-        pip install setup
+        pip install setuptools
         pip install -r requirements.txt
       workingDirectory: $(projectRoot)
-      displayName: "Install requirements"
+      displayName: 'Install requirements'
 
     - task: ArchiveFiles@2
       displayName: 'Archive files'
@@ -54,10 +51,10 @@ stages:
         rootFolderOrFile: '$(projectRoot)'
         includeRootFolder: false
         archiveType: zip
-        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
         replaceExistingArchive: true
 
-    - upload: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+    - upload: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       displayName: 'Upload package'
       artifact: drop
 
@@ -74,14 +71,13 @@ stages:
       runOnce:
         deploy:
           steps:
-
-          # - task: UsePythonVersion@0
-          #   inputs:
-          #     versionSpec: '$(pythonVersion)'
-          #   displayName: 'Use Python version'
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(pythonVersion)'
+            displayName: 'Use Python version'
 
           - task: AzureWebApp@1
-            displayName: 'Deploy Azure Web App : Relecloud'
+            displayName: 'Deploy Azure Web App : Relecloud-2526'
             inputs:
               appType: webApp
               azureSubscription: 
