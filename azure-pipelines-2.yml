@@ -5,36 +5,33 @@ trigger:
 - main
 
 variables:
-  # Azure Resource Manager connection created during pipeline creation
+  # Azure Resource Manager connection
   azureServiceConnectionId: 'abaa671b-36dd-4136-b05d-ecfb61eaf3c1'
 
   # Web app name
   webAppName: 'Relecloud-2526'
 
-  # Agent VM image name
-  vmImageName: 'ubuntu-latest'
-
   # Environment name
   environmentName: 'Relecloud-2526'
 
-  # Project root folder. Point to the folder containing manage.py file.
+  # Project root folder. Folder que contiene manage.py
   projectRoot: $(System.DefaultWorkingDirectory)
 
-  pythonVersion: '3.12'
+  # Ruta a Python en el agente self-hosted
   pythonPath: '/usr/bin/python3'
 
 stages:
 - stage: Build
-  displayName: Build stage
+  displayName: 'Build stage'
   jobs:
   - job: BuildJob
+    displayName: 'BuildJob'
     pool:
-      name: 'ISW2-SanJoseDaniel'
+      name: 'ISW2-SanJoseDaniel'   # agente self-hosted
     steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '$(pythonVersion)'
-      displayName: 'Use Python $(pythonVersion)'
+    - script: |
+        $(pythonPath) --version
+      displayName: 'Check Python version'
 
     - script: |
         $(pythonPath) -m venv antenv
@@ -64,22 +61,18 @@ stages:
   condition: succeeded()
   jobs:
   - deployment: DeploymentJob
-    pool: 
-      name: 'ISW2-SanJoseDaniel'
+    displayName: 'DeploymentJob'
+    pool:
+      name: 'ISW2-SanJoseDaniel'   # mismo agente
     environment: $(environmentName)
     strategy:
       runOnce:
         deploy:
           steps:
-          - task: UsePythonVersion@0
-            inputs:
-              versionSpec: '$(pythonVersion)'
-            displayName: 'Use Python version'
-
           - task: AzureWebApp@1
             displayName: 'Deploy Azure Web App : Relecloud-2526'
             inputs:
               appType: webApp
-              azureSubscription: 
+              azureSubscription:
               appName: $(webAppName)
-              package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
+              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
