@@ -6,3 +6,4 @@ gunicorn
 whitenoise
 dj-database-url
 psycopg2-binary
+apt install python3.10-venv
