@@ -5,7 +5,7 @@ trigger:
 - main
 
 variables:
-  azureServiceConnectionId: 'abaa671b-36dd-4136-b05d-ecfb61eaf3c1'
+  azureServiceConnectionId: 'Azure for Students(033e26f8-876d-4414-b6bc-673accd6b842)'
   webAppName: 'Relecloud-2526'
   environmentName: 'Relecloud-2526'
 
@@ -81,6 +81,6 @@ stages:
             displayName: 'Deploy Azure Web App : Relecloud-2526'
             inputs:
               appType: webApp
-              azureSubscription: 
+              azureSubscription: '$(azureServiceConnectionId)'
               appName: $(webAppName)
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
