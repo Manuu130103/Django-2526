@@ -87,7 +87,11 @@ class InfoRequestCreate(SuccessMessageMixin, generic.CreateView):
                         }
                     connection = get_connection(**conn_kwargs) if conn_kwargs else get_connection()
 
-                    admin_msg = EmailMessage(subject, message, from_email, [recipient], connection=connection)
+                    # Use a friendly From display name and set reply_to to the submitter
+                    from_display = f"ReleCloud <{from_email}>"
+                    admin_msg = EmailMessage(subject, message, from_display, [recipient], connection=connection)
+                    if info.email:
+                        admin_msg.reply_to = [info.email]
                     admin_msg.send(fail_silently=False)
                     logger.info('Sent admin notification for InfoRequest id=%s to %s via explicit connection', info.pk, recipient)
                 except Exception:
@@ -116,7 +120,8 @@ class InfoRequestCreate(SuccessMessageMixin, generic.CreateView):
                         }
                     connection = get_connection(**conn_kwargs) if conn_kwargs else get_connection()
 
-                    confirm_msg = EmailMessage(confirm_subject, confirm_message, from_email, [info.email], connection=connection)
+                    confirm_from = f"ReleCloud <{from_email}>"
+                    confirm_msg = EmailMessage(confirm_subject, confirm_message, confirm_from, [info.email], connection=connection)
                     confirm_msg.send(fail_silently=False)
                     logger.info('Sent confirmation email for InfoRequest id=%s to %s via explicit connection', info.pk, info.email)
                 except Exception:
