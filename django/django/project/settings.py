@@ -26,7 +26,7 @@ SECRET_KEY = '_&5c@1153xw6=489*2=&*%=4)8f^m54kb@3ca-cb(wm%b@wm'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['relecloud-2526-g8hubyh8c4f9hcgz.germanywestcentral-01.azurewebsites.net']
+ALLOWED_HOSTS = ['relecloud-2526-g8hubyh8c4f9hcgz.germanywestcentral-01.azurewebsites.net', 'localhost', '127.0.0.1', 'https://relecloud-ecc7f6dqhuffbyf0.spaincentral-01.azurewebsites.net']
 
 CSRF_TRUSTED_ORIGINS = [
     "https://relecloud-2526-g8hubyh8c4f9hcgz.germanywestcentral-01.azurewebsites.net",
