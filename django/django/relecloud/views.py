@@ -4,7 +4,7 @@ from . import models
 from django.views import generic
 from django.contrib.messages.views import SuccessMessageMixin
 from.models import Destination, Cruise, InfoRequest
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMessage, get_connection
 from django.conf import settings
 import logging
 
@@ -74,28 +74,52 @@ class InfoRequestCreate(SuccessMessageMixin, generic.CreateView):
         # Send notification to site admin/owner. Also include the requester as a recipient
         # so they receive a copy even if a separate confirmation fails due to provider rules.
         if recipient and from_email:
-            try:
-                # send only to fixed admin address; include requester is optional but not necessary
-                admin_recipients = [recipient]
-                send_mail(subject, message, from_email, admin_recipients, fail_silently=False)
-                logger.info('Sent admin notification for InfoRequest id=%s to %s', info.pk, recipient)
-            except Exception:
-                logger.exception('Failed sending admin notification for InfoRequest id=%s to %s', info.pk, recipient)
+                try:
+                    # Build connection using settings (fallback to default connection when settings absent)
+                    conn_kwargs = {}
+                    if getattr(settings, 'EMAIL_HOST', None):
+                        conn_kwargs = {
+                            'host': getattr(settings, 'EMAIL_HOST', None),
+                            'port': int(getattr(settings, 'EMAIL_PORT', 0)) or None,
+                            'username': getattr(settings, 'EMAIL_HOST_USER', None),
+                            'password': getattr(settings, 'EMAIL_HOST_PASSWORD', None),
+                            'use_tls': getattr(settings, 'EMAIL_USE_TLS', False),
+                        }
+                    connection = get_connection(**conn_kwargs) if conn_kwargs else get_connection()
+
+                    admin_msg = EmailMessage(subject, message, from_email, [recipient], connection=connection)
+                    admin_msg.send(fail_silently=False)
+                    logger.info('Sent admin notification for InfoRequest id=%s to %s via explicit connection', info.pk, recipient)
+                except Exception:
+                    logger.exception('Failed sending admin notification for InfoRequest id=%s to %s', info.pk, recipient)
         else:
-            logger.info('Email not sent: CONTACT_EMAIL or DEFAULT_FROM_EMAIL not configured.')
+                logger.info('Email not sent: CONTACT_EMAIL or DEFAULT_FROM_EMAIL not configured.')
 
         # Send a confirmation email to requester and log any issues
         if from_email and info.email:
-            confirm_subject = f"We received your info request for {info.cruise}"
-            confirm_message = (
-                f"Hi {info.name},\n\n"
-                "Thanks for your information request. We received the following message:\n\n"
-                f"Cruise: {info.cruise}\nNotes:\n{info.notes}\n\nWe will contact you at {info.email} when we have more details.\n"
-            )
-            try:
-                send_mail(confirm_subject, confirm_message, from_email, [info.email], fail_silently=False)
-                logger.info('Sent confirmation email for InfoRequest id=%s to %s', info.pk, info.email)
-            except Exception:
-                logger.exception('Failed sending confirmation email to requester for InfoRequest id=%s, email=%s', info.pk, info.email)
+                confirm_subject = f"We received your info request for {info.cruise}"
+                confirm_message = (
+                    f"Hi {info.name},\n\n"
+                    "Thanks for your information request. We received the following message:\n\n"
+                    f"Cruise: {info.cruise}\nNotes:\n{info.notes}\n\nWe will contact you at {info.email} when we have more details.\n"
+                )
+                try:
+                    # Use same explicit connection as above when possible
+                    conn_kwargs = {}
+                    if getattr(settings, 'EMAIL_HOST', None):
+                        conn_kwargs = {
+                            'host': getattr(settings, 'EMAIL_HOST', None),
+                            'port': int(getattr(settings, 'EMAIL_PORT', 0)) or None,
+                            'username': getattr(settings, 'EMAIL_HOST_USER', None),
+                            'password': getattr(settings, 'EMAIL_HOST_PASSWORD', None),
+                            'use_tls': getattr(settings, 'EMAIL_USE_TLS', False),
+                        }
+                    connection = get_connection(**conn_kwargs) if conn_kwargs else get_connection()
+
+                    confirm_msg = EmailMessage(confirm_subject, confirm_message, from_email, [info.email], connection=connection)
+                    confirm_msg.send(fail_silently=False)
+                    logger.info('Sent confirmation email for InfoRequest id=%s to %s via explicit connection', info.pk, info.email)
+                except Exception:
+                    logger.exception('Failed sending confirmation email to requester for InfoRequest id=%s, email=%s', info.pk, info.email)
 
         return response
