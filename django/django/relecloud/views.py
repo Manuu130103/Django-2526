@@ -68,25 +68,34 @@ class InfoRequestCreate(SuccessMessageMixin, generic.CreateView):
 
         # Destination email for site owner / admin
         recipient = getattr(settings, 'CONTACT_EMAIL', None)
-        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+        # Prefer the authenticated SMTP user as the sender if configured, otherwise use DEFAULT_FROM_EMAIL
+        from_email = getattr(settings, 'EMAIL_HOST_USER', None) or getattr(settings, 'DEFAULT_FROM_EMAIL', None)
 
-        try:
-            if recipient and from_email:
-                send_mail(subject, message, from_email, [recipient], fail_silently=False)
-            else:
-                logger.info('Email not sent: CONTACT_EMAIL or DEFAULT_FROM_EMAIL not configured.')
+        # Send notification to site admin/owner. Also include the requester as a recipient
+        # so they receive a copy even if a separate confirmation fails due to provider rules.
+        if recipient and from_email:
+            try:
+                admin_recipients = [recipient]
+                if info.email:
+                    # avoid duplicates
+                    admin_recipients.append(info.email)
+                send_mail(subject, message, from_email, admin_recipients, fail_silently=False)
+            except Exception:
+                logger.exception('Failed sending admin notification for InfoRequest id=%s', info.pk)
+        else:
+            logger.info('Email not sent: CONTACT_EMAIL or DEFAULT_FROM_EMAIL not configured.')
 
-            # Send a confirmation email to requester (fail silently so UX isn't broken)
-            if from_email and info.email:
-                confirm_subject = f"We received your info request for {info.cruise}"
-                confirm_message = (
-                    f"Hi {info.name},\n\n"
-                    "Thanks for your information request. We received the following message:\n\n"
-                    f"""Cruise: {info.cruise}\nNotes:\n{info.notes}\n\nWe will contact you at {info.email} when we have more details.\n"""
-                )
-                send_mail(confirm_subject, confirm_message, from_email, [info.email], fail_silently=True)
-
-        except Exception as e:
-            logger.exception('Error sending info_request emails: %s', e)
+        # Send a confirmation email to requester and log any issues
+        if from_email and info.email:
+            confirm_subject = f"We received your info request for {info.cruise}"
+            confirm_message = (
+                f"Hi {info.name},\n\n"
+                "Thanks for your information request. We received the following message:\n\n"
+                f"Cruise: {info.cruise}\nNotes:\n{info.notes}\n\nWe will contact you at {info.email} when we have more details.\n"
+            )
+            try:
+                send_mail(confirm_subject, confirm_message, from_email, [info.email], fail_silently=False)
+            except Exception:
+                logger.exception('Failed sending confirmation email to requester for InfoRequest id=%s, email=%s', info.pk, info.email)
 
         return response

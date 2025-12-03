@@ -154,7 +154,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Email configuration: use SMTP if environment variables are provided,
 # otherwise fall back to the console backend for local development.
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'grupob7is2@gmail.com')
 CONTACT_EMAIL = os.environ.get('CONTACT_EMAIL', 'grupob7is2@gmail.com')
 
 if os.environ.get('EMAIL_HOST'):
