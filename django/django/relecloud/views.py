@@ -54,77 +54,116 @@ class InfoRequestCreate(SuccessMessageMixin, generic.CreateView):
     success_message = 'Thank you, %(name)s! We will email you when we have more information about %(cruise)s!'
     
     def form_valid(self, form):
+        """
+        After saving the InfoRequest, send:
+        - A notification email to the admin (grupob7is2@gmail.com) with all fields.
+        - A confirmation email to the requester (info.email).
+        """
         # Save the InfoRequest first
         response = super().form_valid(form)
         info = form.instance
 
-        subject = f"New info request for {info.cruise} from {info.name}"
-        message = (
+        # Prefer the authenticated SMTP user as sender, else DEFAULT_FROM_EMAIL
+        base_from_email = (
+            getattr(settings, 'EMAIL_HOST_USER', None)
+            or getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+        )
+
+        if not base_from_email:
+            logger.info(
+                'InfoRequest id=%s saved, but email not sent: EMAIL_HOST_USER/DEFAULT_FROM_EMAIL not configured.',
+                info.pk,
+            )
+            return response
+
+        # Human-readable From header, e.g. "ReleCloud <grupob7is2@gmail.com>"
+        from_email = f"ReleCloud <{base_from_email}>"
+
+        # Fixed admin recipient
+        admin_recipient = 'grupob7is2@gmail.com'
+
+        # Build email bodies including all form fields
+        admin_subject = f"New info request for {info.cruise} from {info.name}"
+        admin_message = (
+            "A new information request has been submitted:\n\n"
             f"Name: {info.name}\n"
             f"Email: {info.email}\n"
             f"Cruise: {info.cruise}\n\n"
-            f"Notes:\n{info.notes}\n"
+            "Notes:\n"
+            f"{info.notes}\n"
         )
 
-        # Destination email for site owner / admin (fixed)
-        recipient = 'grupob7is2@gmail.com'
-        # Prefer the authenticated SMTP user as the sender if configured, otherwise use DEFAULT_FROM_EMAIL
-        from_email = getattr(settings, 'EMAIL_HOST_USER', None) or getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+        confirm_subject = f"We received your info request for {info.cruise}"
+        confirm_message = (
+            f"Hi {info.name},\n\n"
+            "Thanks for your information request. We received the following information:\n\n"
+            f"Name: {info.name}\n"
+            f"Email: {info.email}\n"
+            f"Cruise: {info.cruise}\n\n"
+            "Notes:\n"
+            f"{info.notes}\n\n"
+            "We will contact you at this address when we have more details.\n"
+        )
 
-        # Send notification to site admin/owner. Also include the requester as a recipient
-        # so they receive a copy even if a separate confirmation fails due to provider rules.
-        if recipient and from_email:
-                try:
-                    # Build connection using settings (fallback to default connection when settings absent)
-                    conn_kwargs = {}
-                    if getattr(settings, 'EMAIL_HOST', None):
-                        conn_kwargs = {
-                            'host': getattr(settings, 'EMAIL_HOST', None),
-                            'port': int(getattr(settings, 'EMAIL_PORT', 0)) or None,
-                            'username': getattr(settings, 'EMAIL_HOST_USER', None),
-                            'password': getattr(settings, 'EMAIL_HOST_PASSWORD', None),
-                            'use_tls': getattr(settings, 'EMAIL_USE_TLS', False),
-                        }
-                    connection = get_connection(**conn_kwargs) if conn_kwargs else get_connection()
+        try:
+            # Use the configured EMAIL_BACKEND (SMTP in prod, console/locmem in dev/tests)
+            connection = get_connection()
+        except Exception:
+            logger.exception(
+                'Failed to obtain email connection for InfoRequest id=%s. No emails sent.',
+                info.pk,
+            )
+            return response
 
-                    # Use a friendly From display name and set reply_to to the submitter
-                    from_display = f"ReleCloud <{from_email}>"
-                    admin_msg = EmailMessage(subject, message, from_display, [recipient], connection=connection)
-                    if info.email:
-                        admin_msg.reply_to = [info.email]
-                    admin_msg.send(fail_silently=False)
-                    logger.info('Sent admin notification for InfoRequest id=%s to %s via explicit connection', info.pk, recipient)
-                except Exception:
-                    logger.exception('Failed sending admin notification for InfoRequest id=%s to %s', info.pk, recipient)
-        else:
-                logger.info('Email not sent: CONTACT_EMAIL or DEFAULT_FROM_EMAIL not configured.')
+        # 1) Admin notification (with reply_to set to the requester email)
+        try:
+            admin_email = EmailMessage(
+                subject=admin_subject,
+                body=admin_message,
+                from_email=from_email,
+                to=[admin_recipient],
+                reply_to=[info.email] if info.email else None,
+                connection=connection,
+            )
+            admin_email.send(fail_silently=False)
+            logger.info(
+                'Sent admin notification for InfoRequest id=%s to %s.',
+                info.pk,
+                admin_recipient,
+            )
+        except Exception:
+            logger.exception(
+                'Failed sending admin notification for InfoRequest id=%s to %s.',
+                info.pk,
+                admin_recipient,
+            )
 
-        # Send a confirmation email to requester and log any issues
-        if from_email and info.email:
-                confirm_subject = f"We received your info request for {info.cruise}"
-                confirm_message = (
-                    f"Hi {info.name},\n\n"
-                    "Thanks for your information request. We received the following message:\n\n"
-                    f"Cruise: {info.cruise}\nNotes:\n{info.notes}\n\nWe will contact you at {info.email} when we have more details.\n"
+        # 2) Confirmation to requester (only if they gave a valid email)
+        if info.email:
+            try:
+                confirm_email = EmailMessage(
+                    subject=confirm_subject,
+                    body=confirm_message,
+                    from_email=from_email,
+                    to=[info.email],
+                    connection=connection,
                 )
-                try:
-                    # Use same explicit connection as above when possible
-                    conn_kwargs = {}
-                    if getattr(settings, 'EMAIL_HOST', None):
-                        conn_kwargs = {
-                            'host': getattr(settings, 'EMAIL_HOST', None),
-                            'port': int(getattr(settings, 'EMAIL_PORT', 0)) or None,
-                            'username': getattr(settings, 'EMAIL_HOST_USER', None),
-                            'password': getattr(settings, 'EMAIL_HOST_PASSWORD', None),
-                            'use_tls': getattr(settings, 'EMAIL_USE_TLS', False),
-                        }
-                    connection = get_connection(**conn_kwargs) if conn_kwargs else get_connection()
-
-                    confirm_from = f"ReleCloud <{from_email}>"
-                    confirm_msg = EmailMessage(confirm_subject, confirm_message, confirm_from, [info.email], connection=connection)
-                    confirm_msg.send(fail_silently=False)
-                    logger.info('Sent confirmation email for InfoRequest id=%s to %s via explicit connection', info.pk, info.email)
-                except Exception:
-                    logger.exception('Failed sending confirmation email to requester for InfoRequest id=%s, email=%s', info.pk, info.email)
+                confirm_email.send(fail_silently=False)
+                logger.info(
+                    'Sent confirmation email for InfoRequest id=%s to %s.',
+                    info.pk,
+                    info.email,
+                )
+            except Exception:
+                logger.exception(
+                    'Failed sending confirmation email for InfoRequest id=%s to %s.',
+                    info.pk,
+                    info.email,
+                )
+        else:
+            logger.info(
+                'No confirmation email sent for InfoRequest id=%s: requester email is empty.',
+                info.pk,
+            )
 
         return response
