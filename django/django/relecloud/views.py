@@ -103,7 +103,7 @@ class InfoRequestCreate(SuccessMessageMixin, generic.CreateView):
             )
         except Exception:
             logger.exception(
-                "❌ Could not get email connection for InfoRequest id=%s. No emails sent.",
+                " Could not get email connection for InfoRequest id=%s. No emails sent.",
                 info.pk,
             )
             return response
@@ -121,7 +121,7 @@ class InfoRequestCreate(SuccessMessageMixin, generic.CreateView):
             logger.info("📬 Admin email sent for InfoRequest id=%s", info.pk)
         except Exception:
             logger.exception(
-                "❌ Failed to send admin email for InfoRequest id=%s", info.pk
+                " Failed to send admin email for InfoRequest id=%s", info.pk
             )
 
         # 8. Send confirmation email to user
@@ -137,7 +137,7 @@ class InfoRequestCreate(SuccessMessageMixin, generic.CreateView):
                 logger.info("📨 Confirmation sent to %s", info.email)
             except Exception:
                 logger.exception(
-                    "❌ Failed sending confirmation email for InfoRequest id=%s to %s",
+                    " Failed sending confirmation email for InfoRequest id=%s to %s",
                     info.pk,
                     info.email,
                 )
