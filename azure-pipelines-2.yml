@@ -6,11 +6,11 @@ variables:
   azureServiceConnectionId: 'Azure for Students(033e26f8-876d-4414-b6bc-673accd6b842)'
 
   # Nombre de la Web App en Azure (puede ser el slot)
-  webAppName: 'Relecloud-2526-g8hubyh8c4f9hcgz'
+  #webAppName: 'Relecloud-2526-g8hubyh8c4f9hcgz'
   # Si quieres la app base:
-  # webAppName: 'Relecloud-2526'
+  webAppName: 'Relecloud'
 
-  environmentName: 'Relecloud-2526'
+  environmentName: 'Relecloud'
 
   # Carpeta donde están manage.py, project/, relecloud/, requirements.txt
   projectRoot: '$(Build.SourcesDirectory)\django\django'
