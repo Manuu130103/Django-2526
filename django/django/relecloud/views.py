@@ -66,8 +66,8 @@ class InfoRequestCreate(SuccessMessageMixin, generic.CreateView):
             f"Notes:\n{info.notes}\n"
         )
 
-        # Destination email for site owner / admin
-        recipient = getattr(settings, 'CONTACT_EMAIL', None)
+        # Destination email for site owner / admin (fixed)
+        recipient = 'grupob7is2@gmail.com'
         # Prefer the authenticated SMTP user as the sender if configured, otherwise use DEFAULT_FROM_EMAIL
         from_email = getattr(settings, 'EMAIL_HOST_USER', None) or getattr(settings, 'DEFAULT_FROM_EMAIL', None)
 
@@ -75,13 +75,12 @@ class InfoRequestCreate(SuccessMessageMixin, generic.CreateView):
         # so they receive a copy even if a separate confirmation fails due to provider rules.
         if recipient and from_email:
             try:
+                # send only to fixed admin address; include requester is optional but not necessary
                 admin_recipients = [recipient]
-                if info.email:
-                    # avoid duplicates
-                    admin_recipients.append(info.email)
                 send_mail(subject, message, from_email, admin_recipients, fail_silently=False)
+                logger.info('Sent admin notification for InfoRequest id=%s to %s', info.pk, recipient)
             except Exception:
-                logger.exception('Failed sending admin notification for InfoRequest id=%s', info.pk)
+                logger.exception('Failed sending admin notification for InfoRequest id=%s to %s', info.pk, recipient)
         else:
             logger.info('Email not sent: CONTACT_EMAIL or DEFAULT_FROM_EMAIL not configured.')
 
@@ -95,6 +94,7 @@ class InfoRequestCreate(SuccessMessageMixin, generic.CreateView):
             )
             try:
                 send_mail(confirm_subject, confirm_message, from_email, [info.email], fail_silently=False)
+                logger.info('Sent confirmation email for InfoRequest id=%s to %s', info.pk, info.email)
             except Exception:
                 logger.exception('Failed sending confirmation email to requester for InfoRequest id=%s, email=%s', info.pk, info.email)
 
