@@ -1,6 +1,6 @@
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from .models import Destination, Cruise, InfoRequest
+from .models import Destination, Cruise, InfoRequest, Review
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 
@@ -72,3 +72,45 @@ class InfoRequestEmailTests(TestCase):
 
         # Verifica que la imagen aparece en la respuesta
         self.assertContains(response, 'test_image.gif')
+
+class ReviewModelTests(TestCase):
+    def setUp(self):
+        # Crear un destino de prueba
+        self.dest = Destination.objects.create(
+            name="Test Planet", 
+            description="A test description"
+        )
+
+    def test_create_review(self):
+        """Probar que se puede crear una review correctamente"""
+        review = Review.objects.create(
+            destination=self.dest,
+            author="Tester",
+            rating=5,
+            comment="Great place!"
+        )
+        self.assertEqual(Review.objects.count(), 1)
+        self.assertEqual(review.rating, 5)
+
+    def test_rating_average_logic(self):
+        """Probar manualmente que la media tendría sentido"""
+        Review.objects.create(destination=self.dest, rating=5, comment="A")
+        Review.objects.create(destination=self.dest, rating=1, comment="B")
+
+        # 5 + 1 = 6. Media = 3.
+        reviews = self.dest.reviews.all()
+        total = sum([r.rating for r in reviews])
+        avg = total / len(reviews)
+        self.assertEqual(avg, 3.0)
+
+class DestinationDetailViewTests(TestCase):
+    def setUp(self):
+        self.dest = Destination.objects.create(name="Mars", description="Red planet")
+        self.url = reverse('destination_detail', args=[self.dest.id])
+
+    def test_view_context_contains_form(self):
+        """La vista debe enviar el formulario al HTML"""
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('form', response.context)
+        self.assertIn('avg_rating', response.context)
