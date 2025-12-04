@@ -33,7 +33,7 @@ class Cruise(models.Model):
         null=False,
         blank=False
     )
-    destination = models.ForeignKey(Destination, on_delete=models.CASCADE)
+    destinations = models.ManyToManyField(Destination, related_name='cruises')
 
     def __str__(self):
         return self.name

@@ -2,44 +2,60 @@
 {% load static %}
 
 {% block title %}
-ReleCloud - {{ destination.name }}
+ReleCloud - {{ cruise.name }}
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-lg-8">
-            <h1 class="display-4">{{ destination.name }}</h1>
+            <h1 class="display-4">{{ cruise.name }}</h1>
             
-            {% if destination.image %}
-                <img src="{{ destination.image.url }}" class="img-fluid rounded mb-4 shadow-sm" alt="{{ destination.name }}" style="width: 100%; height: 400px; object-fit: cover;">
-            {% endif %}
-            
-            <p class="lead text-justify">
-                {{ destination.description }}
-            </p>
-
+            <div class="alert alert-info shadow-sm" role="alert">
+                <h4 class="alert-heading">¡Prepárate para zarpar!</h4>
+                <p>Este crucero ofrece una experiencia inolvidable a través de las estrellas.</p>
             </div>
 
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">Descripción del viaje</h4>
+                    <p class="card-text text-justify">
+                        {{ cruise.description }}
+                    </p>
+                    <hr>
+                    <a href="{% url 'info_request' %}" class="btn btn-success btn-lg">
+                        Solicitar Información
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <div class="col-lg-4">
-            <div class="card bg-light mb-3">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Available Cruises</h5>
+            <div class="card bg-light mb-3 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Itinerario (Destinos)</h5>
                 </div>
                 <div class="card-body">
-                    <p class="card-text">You can explore <strong>{{ destination.name }}</strong> on the following cruises:</p>
+                    <p class="card-text">Este crucero hace parada en los siguientes destinos:</p>
                     
                     <div class="list-group">
-                        {% for cruise in destination.cruise_set.all %}
-                            <a href="{% url 'cruise_detail' cruise.id %}" class="list-group-item list-group-item-action flex-column align-items-start">
+                        {% for destination in cruise.destinations.all %}
+                            <a href="{% url 'destination_detail' destination.id %}" class="list-group-item list-group-item-action flex-column align-items-start">
                                 <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1 text-primary">{{ cruise.name }}</h6>
+                                    <h6 class="mb-1 text-success">{{ destination.name }}</h6>
                                 </div>
-                                <small class="text-muted">{{ cruise.description|truncatewords:10 }}</small>
+                                
+                                {% if destination.image %}
+                                    <img src="{{ destination.image.url }}" alt="{{ destination.name }}" class="img-fluid rounded mt-2 mb-2" style="height: 100px; width: 100%; object-fit: cover;">
+                                {% else %}
+                                    <img src="{% static 'images/default_planet.jpg' %}" alt="Default" class="img-fluid rounded mt-2 mb-2" style="height: 100px; width: 100%; object-fit: cover;">
+                                {% endif %}
+
+                                <p class="mb-1 text-muted small">{{ destination.description|truncatewords:10 }}</p>
                             </a>
                         {% empty %}
                             <div class="alert alert-warning" role="alert">
-                                No cruises scheduled for this destination yet,.
+                                No se han confirmado destinos para este crucero aún.
                             </div>
                         {% endfor %}
                     </div>
