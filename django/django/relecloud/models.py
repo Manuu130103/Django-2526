@@ -14,6 +14,7 @@ class Destination(models.Model):
         null=False,
         blank=False
     )
+    image = models.ImageField(upload_to='destinations/', null=True, blank=True)
     def __str__(self):
         return self.name
     
@@ -32,7 +33,7 @@ class Cruise(models.Model):
         null=False,
         blank=False
     )
-    destination = models.ForeignKey(Destination, on_delete=models.CASCADE)
+    destinations = models.ManyToManyField(Destination, related_name='cruises')
 
     def __str__(self):
         return self.name

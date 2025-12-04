@@ -1,18 +1,54 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}
-ReleCloud - {{ destination }}
+ReleCloud - {{ destination.name }}
 {% endblock %}
 
 {% block content %}
-<h1>{{ destination }}</h1>
-<p>
-{{ destination.description }}
-</p>
-<p>You can explore {{ destination }} on the following cruises:</p>
-<ul class="list-group">
-    {% for cruise in destination.cruises.all %}
-    <a class="list-group-item list-group-item-action" href="{% url 'cruise_detail' cruise.id %}">{{ cruise }}</a>
-    {% endfor %}
-</ul>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <h1 class="display-4">{{ destination.name }}</h1>
+            
+            {% if destination.image %}
+                <img src="{{ destination.image.url }}" class="img-fluid rounded mb-4 shadow-sm" 
+                     alt="{{ destination.name }}" style="width: 100%; height: 400px; object-fit: cover;">
+            {% else %}
+                <img src="{% static 'images/default_planet.jpg' %}" class="img-fluid rounded mb-4 shadow-sm" 
+                     alt="Default" style="width: 100%; height: 400px; object-fit: cover;">
+            {% endif %}
+            
+            <p class="lead text-justify">
+                {{ destination.description }}
+            </p>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card bg-light mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Cruceros Disponibles</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Puedes visitar <strong>{{ destination.name }}</strong> en los siguientes cruceros:</p>
+                    
+                    <div class="list-group">
+                        {% for cruise in destination.cruises.all %}
+                            <a href="{% url 'cruise_detail' cruise.id %}" class="list-group-item list-group-item-action flex-column align-items-start">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1 text-primary">{{ cruise.name }}</h6>
+                                </div>
+                                <small class="text-muted">{{ cruise.description|truncatewords:15 }}</small>
+                            </a>
+                        {% empty %}
+                            <div class="alert alert-warning" role="alert">
+                                No hay cruceros programados para este destino todavía.
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock content %}

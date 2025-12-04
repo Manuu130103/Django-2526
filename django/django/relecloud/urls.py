@@ -1,5 +1,6 @@
 from django.urls import path
-
+from django.conf import settings
+from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
@@ -12,4 +13,4 @@ urlpatterns = [
     path('destination/<int:pk>/delete', views.DestinationDeleteView.as_view(), name='destination_confirm_delete'),
     path('cruise/<int:pk>', views.CruiseDetailView.as_view(), name='cruise_detail'),
     path('info_request', views.InfoRequestCreate.as_view(), name='info_request'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
