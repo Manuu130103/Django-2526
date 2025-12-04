@@ -1,5 +1,7 @@
 from django.db import models
 from django.urls import reverse
+from django.core.validators import MinValueValidator, MaxValueValidator
+
 
 # Create your models here.
 class Destination(models.Model):
@@ -57,3 +59,15 @@ class InfoRequest(models.Model):
         Cruise,
         on_delete=models.PROTECT
     )
+class Review(models.Model):
+    destination = models.ForeignKey(Destination, on_delete=models.CASCADE, related_name='reviews')
+    author = models.CharField(max_length=50, null=False, blank=False, default="Anonymous")
+    rating = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="Enter a rating between 1 and 5"
+    )
+    comment = models.TextField(max_length=1000)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.rating}/5 for {self.destination.name} by {self.author}"

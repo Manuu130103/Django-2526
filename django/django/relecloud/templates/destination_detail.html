@@ -1,16 +1,20 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}
-ReleCloud - {{ destination.name }}
-{% endblock %}
-
 {% block content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-lg-8">
             <h1 class="display-4">{{ destination.name }}</h1>
             
+            <div class="mb-3">
+                {% if avg_rating %}
+                    <span class="badge badge-warning p-2" style="font-size: 1.2rem; background-color: #ffc107; color: black;">
+                        ★ {{ avg_rating }} / 5
+                    </span>
+                    <small class="text-muted">({{ reviews.count }} opiniones)</small>
+                {% else %}
+                    <span class="badge badge-secondary p-2">Sin valoraciones aún</span>
+                {% endif %}
+            </div>
+
             {% if destination.image %}
                 <img src="{{ destination.image.url }}" class="img-fluid rounded mb-4 shadow-sm" 
                      alt="{{ destination.name }}" style="width: 100%; height: 400px; object-fit: cover;">
@@ -19,31 +23,56 @@ ReleCloud - {{ destination.name }}
                      alt="Default" style="width: 100%; height: 400px; object-fit: cover;">
             {% endif %}
             
-            <p class="lead text-justify">
-                {{ destination.description }}
-            </p>
+            <p class="lead text-justify">{{ destination.description }}</p>
+
+            <hr class="my-5">
+
+            <h3>Opiniones de Viajeros</h3>
+            
+            <div class="card bg-light mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Deja tu opinión</h5>
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary">Enviar Valoración</button>
+                    </form>
+                </div>
+            </div>
+
+            {% for review in reviews %}
+                <div class="media mb-3 border-bottom pb-3">
+                    <div class="media-body">
+                        <h5 class="mt-0">{{ review.author }} <small class="text-muted">- {{ review.created_at|date:"d M Y" }}</small></h5>
+                        <div class="text-warning mb-1">
+                            {% with ''|center:review.rating as range %}
+                                {% for _ in range %}★{% endfor %}
+                            {% endwith %}
+                            <span class="text-muted" style="font-size: 0.8rem">({{ review.rating }}/5)</span>
+                        </div>
+                        <p>{{ review.comment }}</p>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted">Sé el primero en opinar sobre este destino.</p>
+            {% endfor %}
         </div>
 
         <div class="col-lg-4">
-            <div class="card bg-light mb-3">
+            <div class="card bg-light mb-3 sticky-top" style="top: 20px;">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Cruceros Disponibles</h5>
                 </div>
                 <div class="card-body">
-                    <p class="card-text">Puedes visitar <strong>{{ destination.name }}</strong> en los siguientes cruceros:</p>
-                    
+                    <p class="card-text">Visita <strong>{{ destination.name }}</strong> en:</p>
                     <div class="list-group">
                         {% for cruise in destination.cruises.all %}
-                            <a href="{% url 'cruise_detail' cruise.id %}" class="list-group-item list-group-item-action flex-column align-items-start">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1 text-primary">{{ cruise.name }}</h6>
-                                </div>
-                                <small class="text-muted">{{ cruise.description|truncatewords:15 }}</small>
+                            <a href="{% url 'cruise_detail' cruise.id %}" class="list-group-item list-group-item-action">
+                                <h6 class="mb-1 text-primary">{{ cruise.name }}</h6>
+                                <small class="text-muted">{{ cruise.description|truncatewords:10 }}</small>
                             </a>
                         {% empty %}
-                            <div class="alert alert-warning" role="alert">
-                                No hay cruceros programados para este destino todavía.
-                            </div>
+                            <div class="alert alert-warning">No hay cruceros programados.</div>
                         {% endfor %}
                     </div>
                 </div>

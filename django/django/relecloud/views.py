@@ -1,11 +1,13 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from . import models
 from django.views import generic
 from django.contrib.messages.views import SuccessMessageMixin
 from.models import Destination, Cruise, InfoRequest
+from django.db.models import Avg
 from django.core.mail import send_mail, EmailMessage, get_connection
 from django.conf import settings
+from .forms import ReviewForm
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,8 +25,35 @@ def destinations(request):
 
 class DestinationDetailView(generic.DetailView):
     template_name = 'destination_detail.html'
-    model = models. Destination
+    model = models.Destination
     context_object_name = 'destination'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # 1. Pasar el formulario al HTML
+        context['form'] = ReviewForm()
+        # 2. Pasar la lista de reviews
+        context['reviews'] = self.object.reviews.all().order_by('-created_at')
+        # 3. Calcular la media (Avg)
+        avg_rating = self.object.reviews.aggregate(Avg('rating'))['rating__avg']
+        context['avg_rating'] = round(avg_rating, 1) if avg_rating else None
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = ReviewForm(request.POST)
+        
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.destination = self.object
+            review.save()
+            # Recargar la página para ver el comentario
+            return redirect('destination_detail', pk=self.object.pk)
+        
+        # Si falla, volvemos a mostrar la página con errores
+        context = self.get_context_data(object=self.object)
+        context['form'] = form
+        return self.render_to_response(context)
 
 class DestinationCreateView(generic.CreateView):
     model = models. Destination
