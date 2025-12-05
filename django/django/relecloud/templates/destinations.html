@@ -6,10 +6,42 @@ ReleCloud - Todos los Destinos
 {% endblock title %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>Todos los Destinos</h1>
-    <p class="lead">Explora el universo con nosotros.</p>
 
+{% if top_destinations %}
+<div class="jumbotron p-4 p-md-5 text-white rounded bg-dark mb-5" style="background: #343a40;">
+    <div class="container">
+        <h2 class="display-4 font-italic">⭐ Destinos Más Populares</h2>
+        <p class="lead my-3">Los favoritos de nuestros viajeros intergalácticos.</p>
+        
+        <div class="row text-dark mt-4">
+            {% for dest in top_destinations %}
+            <div class="col-md-4">
+                <div class="card border-warning mb-3 h-100">
+                    <div class="card-header bg-warning">
+                        <strong>#{{ forloop.counter }} {{ dest.name }}</strong>
+                        <span class="float-right badge badge-light">
+                            {{ dest.avg_rating|floatformat:1 }} ★
+                        </span>
+                    </div>
+                    {% if dest.image %}
+                        <img src="{{ dest.image.url }}" class="card-img-top" style="height: 150px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <p class="card-text small">{{ dest.description|truncatewords:10 }}</p>
+                        <a href="{% url 'destination_detail' dest.id %}" class="btn btn-sm btn-outline-dark btn-block">Ver</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="container mt-4">
+    <h3>Catálogo Completo</h3>
+    <hr>
+    
     <div class="row">
         {% for destination in page_obj %}
         <div class="col-md-4 mb-4">
@@ -34,27 +66,17 @@ ReleCloud - Todos los Destinos
     <nav aria-label="Page navigation" class="mt-4">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1">&laquo; Primera</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
-                </li>
+                <li class="page-item"><a class="page-link" href="?page=1">&laquo;</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Ant.</a></li>
             {% endif %}
 
             <li class="page-item disabled">
-                <span class="page-link">
-                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
-                </span>
+                <span class="page-link">Pág {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
             </li>
 
             {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
-                </li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Sig.</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">&raquo;</a></li>
             {% endif %}
         </ul>
     </nav>
