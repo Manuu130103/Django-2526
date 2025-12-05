@@ -2,27 +2,61 @@
 {% load static %}
 
 {% block title %}
-ReleCloud - Destinations
+ReleCloud - Todos los Destinos
 {% endblock title %}
 
 {% block content %}
-<h1>Cruise destinations</h1>
-<p>
-If you can imagine it, we travel to it! Below is our list of confirmed destinations.
-</p>
+<div class="container mt-4">
+    <h1>Todos los Destinos</h1>
+    <p class="lead">Explora el universo con nosotros.</p>
 
-<ul class="list-group">
-    {% for destination in destinations %}
-    <a class="list-group-item list-group-item-action" href="{% url 'destination_detail' destination.id %}">
-        {{ destination }}
+    <div class="row">
+        {% for destination in page_obj %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                {% if destination.image %}
+                    <img src="{{ destination.image.url }}" class="card-img-top" alt="{{ destination.name }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                    <img src="{% static 'images/default_planet.jpg' %}" class="card-img-top" alt="Default" style="height: 200px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ destination.name }}</h5>
+                    <p class="card-text text-muted">{{ destination.description|truncatewords:20 }}</p>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="{% url 'destination_detail' destination.id %}" class="btn btn-primary btn-block">Ver detalles</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 
-        {% if destination.image %}
-            <img src="{{ destination.image.url }}" alt="{{ destination.name }}">
-        {% else %}
-            <img src="{% static 'images/default_planet.jpg' %}" alt="Default">
-        {% endif %}
-    </a>
-    {% endfor %}
-</ul>
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">&laquo; Primera</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                </li>
+            {% endif %}
 
+            <li class="page-item disabled">
+                <span class="page-link">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
 {% endblock content %}
