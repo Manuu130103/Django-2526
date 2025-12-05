@@ -9,6 +9,7 @@ from django.core.mail import send_mail, EmailMessage, get_connection
 from django.conf import settings
 from .forms import ReviewForm
 import logging
+from django.core.paginator import Paginator
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,28 @@ def about(request):
     return render(request, 'about.html')
 
 def destinations(request):
-    all_destinations = models.Destination.objects.all()
-    return render(request, 'destinations.html', {'destinations': all_destinations})
+    # 1. Lógica de Populares (T4.5)
+    # Calculamos la media de las reviews y ordenamos descendente. Nos quedamos los 3 primeros.
+    top_destinations = models.Destination.objects.annotate(
+        avg_rating=Avg('reviews__rating')
+    ).order_by('-avg_rating')[:3]
+
+    # 2. Lógica de Listado con Paginación (T4.2)
+    all_destinations = models.Destination.objects.all().order_by('name') # Ordenamos por nombre para consistencia
+    
+    # Configuramos paginación: 6 elementos por página
+    paginator = Paginator(all_destinations, 6) 
+    
+    # Obtenemos el número de página de la URL
+    page_number = request.GET.get('page')
+    
+    # Obtenemos los objetos de esa página
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'destinations.html', {
+        'page_obj': page_obj,
+        'top_destinations': top_destinations
+    })
 
 class DestinationDetailView(generic.DetailView):
     template_name = 'destination_detail.html'

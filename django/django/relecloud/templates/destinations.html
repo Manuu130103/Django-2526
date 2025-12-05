@@ -2,27 +2,83 @@
 {% load static %}
 
 {% block title %}
-ReleCloud - Destinations
+ReleCloud - Todos los Destinos
 {% endblock title %}
 
 {% block content %}
-<h1>Cruise destinations</h1>
-<p>
-If you can imagine it, we travel to it! Below is our list of confirmed destinations.
-</p>
 
-<ul class="list-group">
-    {% for destination in destinations %}
-    <a class="list-group-item list-group-item-action" href="{% url 'destination_detail' destination.id %}">
-        {{ destination }}
+{% if top_destinations %}
+<div class="jumbotron p-4 p-md-5 text-white rounded bg-dark mb-5" style="background: #343a40;">
+    <div class="container">
+        <h2 class="display-4 font-italic">⭐ Destinos Más Populares</h2>
+        <p class="lead my-3">Los favoritos de nuestros viajeros intergalácticos.</p>
+        
+        <div class="row text-dark mt-4">
+            {% for dest in top_destinations %}
+            <div class="col-md-4">
+                <div class="card border-warning mb-3 h-100">
+                    <div class="card-header bg-warning">
+                        <strong>#{{ forloop.counter }} {{ dest.name }}</strong>
+                        <span class="float-right badge badge-light">
+                            {{ dest.avg_rating|floatformat:1 }} ★
+                        </span>
+                    </div>
+                    {% if dest.image %}
+                        <img src="{{ dest.image.url }}" class="card-img-top" style="height: 150px; object-fit: cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <p class="card-text small">{{ dest.description|truncatewords:10 }}</p>
+                        <a href="{% url 'destination_detail' dest.id %}" class="btn btn-sm btn-outline-dark btn-block">Ver</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
 
-        {% if destination.image %}
-            <img src="{{ destination.image.url }}" alt="{{ destination.name }}">
-        {% else %}
-            <img src="{% static 'images/default_planet.jpg' %}" alt="Default">
-        {% endif %}
-    </a>
-    {% endfor %}
-</ul>
+<div class="container mt-4">
+    <h3>Catálogo Completo</h3>
+    <hr>
+    
+    <div class="row">
+        {% for destination in page_obj %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                {% if destination.image %}
+                    <img src="{{ destination.image.url }}" class="card-img-top" alt="{{ destination.name }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                    <img src="{% static 'images/default_planet.jpg' %}" class="card-img-top" alt="Default" style="height: 200px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ destination.name }}</h5>
+                    <p class="card-text text-muted">{{ destination.description|truncatewords:20 }}</p>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="{% url 'destination_detail' destination.id %}" class="btn btn-primary btn-block">Ver detalles</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1">&laquo;</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Ant.</a></li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link">Pág {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+            </li>
+
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Sig.</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">&raquo;</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
 {% endblock content %}

@@ -4,7 +4,6 @@ from .models import Destination, Cruise, InfoRequest, Review
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-
 class InfoRequestEmailTests(TestCase):
     def setUp(self):
         self.destination = Destination.objects.create(name='Test Dest', description='Desc')
@@ -114,3 +113,45 @@ class DestinationDetailViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('form', response.context)
         self.assertIn('avg_rating', response.context)
+
+class DestinationPaginationTests(TestCase):
+    def setUp(self):
+        # Crear 13 destinos para probar que se crean 3 páginas (6 + 6 + 1)
+        for i in range(13):
+            Destination.objects.create(name=f"Destino {i}", description="Desc")
+
+    def test_pagination_is_six(self):
+        response = self.client.get(reverse('destinations'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('is_paginated', response.context['page_obj'].has_other_pages())
+        # Verificar que en la primera página hay 6 elementos
+        self.assertEqual(len(response.context['page_obj']), 6)
+
+    def test_second_page(self):
+        response = self.client.get(reverse('destinations') + '?page=2')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['page_obj']), 6)
+
+class PopularDestinationsTests(TestCase):
+    def setUp(self):
+        # Crear 3 destinos
+        self.d1 = Destination.objects.create(name="Malo", description="x")
+        self.d2 = Destination.objects.create(name="Bueno", description="x")
+        self.d3 = Destination.objects.create(name="Medio", description="x")
+        
+        # Crear reviews
+        # Bueno (5 estrellas)
+        Review.objects.create(destination=self.d2, rating=5, comment="Wow")
+        # Medio (3 estrellas)
+        Review.objects.create(destination=self.d3, rating=3, comment="Ok")
+        # Malo (1 estrella)
+        Review.objects.create(destination=self.d1, rating=1, comment="Bad")
+
+    def test_popular_ordering(self):
+        """El primero debe ser d2 (5*) y el ultimo d1 (1*)"""
+        response = self.client.get(reverse('destinations'))
+        top_list = response.context['top_destinations']
+        
+        self.assertEqual(top_list[0], self.d2)
+        self.assertEqual(top_list[1], self.d3)
+        self.assertEqual(top_list[2], self.d1)
