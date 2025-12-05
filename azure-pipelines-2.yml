@@ -1,5 +1,5 @@
 trigger:
-- develop
+- main
 
 variables:
   # Service connection de esta organización (NOMBRE, tal como aparece en DevOps)
