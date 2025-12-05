@@ -4,7 +4,6 @@ from .models import Destination, Cruise, InfoRequest, Review
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-
 class InfoRequestEmailTests(TestCase):
     def setUp(self):
         self.destination = Destination.objects.create(name='Test Dest', description='Desc')
@@ -114,3 +113,21 @@ class DestinationDetailViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('form', response.context)
         self.assertIn('avg_rating', response.context)
+
+class DestinationPaginationTests(TestCase):
+    def setUp(self):
+        # Crear 13 destinos para probar que se crean 3 páginas (6 + 6 + 1)
+        for i in range(13):
+            Destination.objects.create(name=f"Destino {i}", description="Desc")
+
+    def test_pagination_is_six(self):
+        response = self.client.get(reverse('destinations'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('is_paginated', response.context['page_obj'].has_other_pages())
+        # Verificar que en la primera página hay 6 elementos
+        self.assertEqual(len(response.context['page_obj']), 6)
+
+    def test_second_page(self):
+        response = self.client.get(reverse('destinations') + '?page=2')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['page_obj']), 6)
